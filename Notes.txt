@@ -1,9 +1,99 @@
 Notes
 
 
+Pending Study
+https://docs.djangoproject.com/en/1.9/topics/http/urls/#url-namespaces
+https://docs.djangoproject.com/en/1.9/topics/http/urls/#reversing-namespaced-urls
+https://docs.djangoproject.com/en/1.9/topics/http/urls/#url-namespaces-and-included-urlconfs
+
+
 ----urs.py----
 “Mastering Regular Expressions” by Jeffrey Friedl
 
 
 Always use include() when you include other URL patterns. 
 dmin.site.urls is the only exception to this.
+
+
+If the regex uses simple captures, values are passed as positional arguments;
+if it uses named captures, values are passed as keyword arguments.
+
+urlpatterns = [
+    url(r'^articles/2003/$', views.special_case_2003),
+    url(r'^articles/([0-9]{4})/$', views.year_archive),
+    url(r'^articles/([0-9]{4})/([0-9]{2})/$', views.month_archive),
+    url(r'^articles/([0-9]{4})/([0-9]{2})/([0-9]+)/$', views.article_detail),
+]
+A request to /articles/2005/03/ would match the third entry in the list.
+Django would call the function views.month_archive(request, '2005', '03').
+/articles/2005/3/ would not match any URL patterns,
+because the third entry in the list requires two digits for the month.
+/articles/2003/ would match the first pattern in the list, not the second one,
+because the patterns are tested in order, and the first one is the first test to pass.
+Feel free to exploit the ordering to insert special cases like this.
+Here, Django would call the function views.special_case_2003(request)
+/articles/2003 would not match any of these patterns, 
+because each pattern requires that the URL end with a slash.
+/articles/2003/03/03/ would match the final pattern. 
+Django would call the function views.article_detail(request, '2003', '03', '03').
+
+the syntax for named regular-expression groups is (?P<name>pattern),
+where name is the name of the group and pattern is some pattern to match.
+url(r'^articles/(?P<year>[0-9]{4})/(?P<month>[0-9]{2})/$', views.month_archive),
+A request to /articles/2003/03/03/ would call the function
+views.article_detail(request, year='2003', month='03', day='03').
+
+The URLconf parser Algorithm:
+If there are any named arguments, it will use those, ignoring non-named arguments.
+Otherwise, it will pass all non-named arguments as positional arguments.
+
+
+Error handling
+Such values can be set in your root URLconf. in any other URLconf will have no effect.
+Values must be callables, or strings representing the full Python import path
+to the view that should be called to handle the error condition at hand.
+The variables are: 
+handler400: The bad_request() view is overridden
+handler403: The permission_denied() view is overridden
+handler404: The page_not_found() view is overridden
+handler500: The server_error() view is overridden
+
+
+Including other URLconfs
+This can be used to remove redundancy from URLconfs
+where a single pattern prefix is used repeatedly.
+urlpatterns = [
+    url(r'^(?P<page_slug>[\w-]+)-(?P<page_id>\w+)/', include([
+        url(r'^history/$', views.history),
+        url(r'^edit/$', views.edit),
+        url(r'^discuss/$', views.discuss),
+        url(r'^permissions/$', views.permissions),
+    ])),
+]
+
+
+Nested arguments
+url(r'comments/(?:page-(?P<page_number>\d+)/)?$', comments),
+This coupling is even more pronounced when reversing, since to reverse the view
+we need to pass the piece of URL instead of the page number.
+
+
+Reverse resolution of URLs
+In templates: Using the url template tag.
+In Python code: Using the django.core.urlresolvers.reverse() function.
+In handling of URLs of Django model instances: The get_absolute_url() method.
+
+Example:
+url(r'^articles/([0-9]{4})/$', views.year_archive, name='news-year-archive'),
+<a href="{% url 'news-year-archive' 2012 %}">2012 Archive</a>
+<ul>
+{% for yearvar in year_list %}
+<li><a href="{% url 'news-year-archive' yearvar %}">{{ yearvar }} Archive</a></li>
+{% endfor %}
+</ul>
+
+def redirect_to_year(request):
+    return HttpResponseRedirect(reverse('news-year-archive', args=(year,)))
+
+
+Did not understand URL namespaces
