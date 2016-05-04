@@ -1,0 +1,9 @@
+Notes
+
+
+----urs.py----
+“Mastering Regular Expressions” by Jeffrey Friedl
+
+
+Always use include() when you include other URL patterns. 
+dmin.site.urls is the only exception to this.
