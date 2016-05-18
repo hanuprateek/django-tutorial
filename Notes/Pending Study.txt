@@ -1,0 +1,8 @@
+----Pending Study----
+
+https://docs.djangoproject.com/en/1.9/topics/http/urls/#url-namespaces
+https://docs.djangoproject.com/en/1.9/topics/http/urls/#reversing-namespaced-urls
+https://docs.djangoproject.com/en/1.9/topics/http/urls/#url-namespaces-and-included-urlconfs
+
+https://docs.djangoproject.com/en/1.9/ref/django-admin/
+https://docs.djangoproject.com/en/1.9/topics/i18n/timezones/
