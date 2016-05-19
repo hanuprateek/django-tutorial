@@ -22,3 +22,19 @@ You can use is_aware() and is_naive() to determine whether datetimes are aware o
 
 If you previously installed Django using python setup.py install, uninstalling is as simple as deleting the django directory from your Python site-packages. To find the directory you need to remove, you can run the following at your shell prompt (not the interactive Python prompt):
 $ python -c "import django; print(django.__path__)"
+
+
+The statements in the else block of the try-except-else-finally are executed if execution falls off the bottom of the try - if there was no exception.
+The use of the else clause is better than adding additional code to the try clause because it avoids accidentally catching an exception that wasn’t raised by the code being protected by the try ... except statement. So, if you have a method that could, for example, throw an IOError, and you want to catch exceptions it raises, but there's something else you want to do if the first operation succeeds, and you don't want to catch an IOError from that operation, you might write something like this:
+
+    try:
+        operation_that_can_throw_ioerror()
+    except IOError:
+        handle_the_exception_somehow()
+    else:
+         # we don't want to catch the IOError if it's raised
+        another_operation_that_can_throw_ioerror()
+    finally:
+        something_we_always_need_to_do()
+
+If you just put another_operation_that_can_throw_ioerror() after operation_that_can_throw_ioerror, the except would catch the second call's errors. And if you put it after the whole try block, it'll always be run, and not until after the finally. The else lets you make sure the second operation's only run if there's no exception, it's run before the finally block, and any IOErrors it raises aren't caught here
