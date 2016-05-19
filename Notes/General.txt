@@ -10,3 +10,15 @@ $ manage.py <command> [options]
 $ python -m django <command> [options]
 
 “Mastering Regular Expressions” by Jeffrey Friedl
+
+
+The command-line examples use django-admin to be consistent, but any example can use manage.py or python -m django just as well.
+New in Django 1.9: python -m django was added.
+
+
+Python’s datetime.datetime objects have a tzinfo attribute that can be used to store time zone information, represented as an instance of a subclass of datetime.tzinfo. When this attribute is set and describes an offset, a datetime object is aware. Otherwise, it’s naive.
+You can use is_aware() and is_naive() to determine whether datetimes are aware or naive.
+
+
+If you previously installed Django using python setup.py install, uninstalling is as simple as deleting the django directory from your Python site-packages. To find the directory you need to remove, you can run the following at your shell prompt (not the interactive Python prompt):
+$ python -c "import django; print(django.__path__)"

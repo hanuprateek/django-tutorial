@@ -6,3 +6,11 @@ https://docs.djangoproject.com/en/1.9/topics/http/urls/#url-namespaces-and-inclu
 
 https://docs.djangoproject.com/en/1.9/ref/django-admin/
 https://docs.djangoproject.com/en/1.9/topics/i18n/timezones/
+
+https://docs.djangoproject.com/en/1.9/howto/deployment/wsgi/modwsgi/
+https://docs.djangoproject.com/en/1.9/howto/deployment/wsgi/uwsgi/
+
+https://docs.djangoproject.com/en/1.9/topics/db/queries/#filters-can-reference-fields-on-the-model
+https://docs.djangoproject.com/en/1.9/ref/models/
+
+https://docs.djangoproject.com/en/1.9/topics/templates/#usage

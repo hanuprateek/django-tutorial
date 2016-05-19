@@ -80,3 +80,136 @@ True
 
 python manage.py createsuperuser
 
+
+>>> b = Blog.objects.get(id=1)
+>>> e = Entry.objects.get(id=234)
+>>> b.entry_set.add(e) # Associates Entry e with Blog b.
+In the example above, in the case of a ForeignKey relationship, QuerySet.update() is used to perform the update. This requires the objects to already be saved.
+
+You can use the bulk=False argument to instead have the related manager perform the update by calling e.save().
+
+Using add() with a many-to-many relationship, however, will not call any save() methods, but rather create the relationships using QuerySet.bulk_create(). If you need to execute some custom logic when a relationship is created, listen to the m2m_changed signal.
+
+
+the select_related() QuerySet method exists. It’s an optional performance booster for the common case of selecting “every related object.”
+
+
+To add multiple records to a ManyToManyField in one go, include multiple arguments in the call to add(), like this:
+
+>>> john = Author.objects.create(name="John")
+>>> paul = Author.objects.create(name="Paul")
+>>> george = Author.objects.create(name="George")
+>>> ringo = Author.objects.create(name="Ringo")
+>>> entry.authors.add(john, paul, george, ringo)
+
+
+You get a QuerySet by using your model’s Manager. Each model has at least one Manager, and it’s called objects by default.
+Access it directly via the model class, like so:
+
+>>> Blog.objects
+<django.db.models.manager.Manager object at ...>
+>>> b = Blog(name='Foo', tagline='Bar')
+>>> b.objects
+Traceback:
+    ...
+AttributeError: "Manager isn't accessible via Blog instances."
+Managers are accessible only via model classes, rather than from model instances, to enforce a separation between “table-level” operations and “record-level” operations.
+
+
+Chaining filters
+The result of refining a QuerySet is itself a QuerySet, so it’s possible to chain refinements together. For example:
+
+>>> Entry.objects.filter(
+...     headline__startswith='What'
+... ).exclude(
+...     pub_date__gte=datetime.date.today()
+... ).filter(
+...     pub_date__gte=datetime(2005, 1, 30)
+... )
+
+
+For example, this returns the first 5 objects (LIMIT 5):
+
+>>> Entry.objects.all()[:5]
+This returns the sixth through tenth objects (OFFSET 5 LIMIT 5):
+
+>>> Entry.objects.all()[5:10]
+
+
+An exception is if you use the “step” parameter of Python slice syntax.
+For example, this would actually execute the query in order to return a list of every second object of the first 10:
+
+>>> Entry.objects.all()[:10:2]
+To retrieve a single object rather than a list (e.g. SELECT foo FROM bar LIMIT 1), use a simple index instead of a slice. For example, this returns the first Entry in the database, after ordering entries alphabetically by headline:
+
+>>> Entry.objects.order_by('headline')[0]
+This is roughly equivalent to:
+
+>>> Entry.objects.order_by('headline')[0:1].get()
+Note, however, that the first of these will raise IndexError while the second will raise DoesNotExist if no objects match the given criteria. See get() for more details.
+
+
+The field specified in a lookup has to be the name of a model field. There’s one exception though, in case of a ForeignKey you can specify the field name suffixed with _id. In this case, the value parameter is expected to contain the raw value of the foreign model’s primary key. For example:
+
+>>> Entry.objects.filter(blog_id=4)
+
+
+Field lookups
+An “exact” match. For example:
+>>> Entry.objects.get(headline__exact="Cat bites dog")
+If you don’t provide a lookup type – that is, if your keyword argument doesn’t contain a double underscore – the lookup type is assumed to be exact.
+For example, the following two statements are equivalent:
+>>> Blog.objects.get(id__exact=14)  # Explicit form
+>>> Blog.objects.get(id=14)         # __exact is implied
+
+A case-insensitive match. So, the query:
+>>> Blog.objects.get(name__iexact="beatles blog")
+Would match a Blog titled "Beatles Blog", "beatles blog", or even "BeAtlES blOG".
+
+Case-sensitive containment test. For example:
+Entry.objects.get(headline__contains='Lennon')
+There’s also a case-insensitive version, icontains.
+
+startswith, endswith Starts-with and ends-with search, respectively.
+There are also case-insensitive versions called istartswith and iendswith.
+
+
+If you are filtering across multiple relationships and one of the intermediate models doesn’t have a value that meets the filter condition, Django will treat it as if there is an empty (all values are NULL), but valid, object there. All this means is that no error will be raised. For example, in this filter:
+>>> Blog.objects.filter(entry__authors__name='Lennon')
+(if there was a related Author model), if there was no author associated with an entry, it would be treated as if there was also no name attached, rather than raising an error because of the missing author. Usually this is exactly what you want to have happen. The only case where it might be confusing is if you are using isnull. Thus:
+>>> Blog.objects.filter(entry__authors__name__isnull=True)
+will return Blog objects that have an empty name on the author and also those which have an empty author on the entry. If you don’t want those latter objects, you could write:
+>>> Blog.objects.filter(entry__authors__isnull=False, entry__authors__name__isnull=True)
+
+
+The same type of situation arises with a ManyToManyField. For example, if an Entry has a ManyToManyField called tags, we might want to find entries linked to tags called “music” and “bands” or we might want an entry that contains a tag with a name of “music” and a status of “public”.
+
+To handle both of these situations, Django has a consistent way of processing filter() calls. Everything inside a single filter() call is applied simultaneously to filter out items matching all those requirements. Successive filter() calls further restrict the set of objects, but for multi-valued relations, they apply to any object linked to the primary model, not necessarily those objects that were selected by an earlier filter() call.
+
+That may sound a bit confusing, so hopefully an example will clarify. To select all blogs that contain entries with both “Lennon” in the headline and that were published in 2008 (the same entry satisfying both conditions), we would write:
+
+Blog.objects.filter(entry__headline__contains='Lennon', entry__pub_date__year=2008)
+To select all blogs that contain an entry with “Lennon” in the headline as well as an entry that was published in 2008, we would write:
+
+Blog.objects.filter(entry__headline__contains='Lennon').filter(entry__pub_date__year=2008)
+
+Suppose there is only one blog that had both entries containing “Lennon” and entries from 2008, but that none of the entries from 2008 contained “Lennon”. The first query would not return any blogs, but the second query would return that one blog.
+
+In the second example, the first filter restricts the queryset to all those blogs linked to entries with “Lennon” in the headline. The second filter restricts the set of blogs further to those that are also linked to entries that were published in 2008. The entries selected by the second filter may or may not be the same as the entries in the first filter. We are filtering the Blog items with each filter statement, not the Entry items.
+
+The behavior of filter() for queries that span multi-value relationships, as described above, is not implemented equivalently for exclude(). Instead, the conditions in a single exclude() call will not necessarily refer to the same item.
+
+For example, the following query would exclude blogs that contain both entries with “Lennon” in the headline and entries published in 2008:
+
+Blog.objects.exclude(
+    entry__headline__contains='Lennon',
+    entry__pub_date__year=2008,
+)
+However, unlike the behavior when using filter(), this will not limit blogs based on entries that satisfy both conditions. In order to do that, i.e. to select all blogs that do not contain entries published with “Lennon” that were published in 2008, you need to make two queries:
+
+Blog.objects.exclude(
+    entry=Entry.objects.filter(
+        headline__contains='Lennon',
+        pub_date__year=2008,
+    ),
+)
