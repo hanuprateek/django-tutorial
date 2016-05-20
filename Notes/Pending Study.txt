@@ -25,3 +25,9 @@ https://docs.djangoproject.com/en/1.9/topics/class-based-views/mixins/
 https://docs.djangoproject.com/en/1.9/topics/testing/overview/
 https://docs.djangoproject.com/en/1.9/topics/testing/tools/
 https://docs.djangoproject.com/en/1.9/topics/testing/advanced/
+
+https://docs.djangoproject.com/en/1.9/ref/contrib/staticfiles/
+https://docs.djangoproject.com/en/1.9/howto/static-files/deployment/
+http://www.fabfile.org/
+
+
