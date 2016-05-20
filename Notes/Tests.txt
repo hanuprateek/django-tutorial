@@ -1,0 +1,172 @@
+--Tests--
+
+
+A conventional place for an application’s tests is in the application’s tests.py file; the testing system will automatically find tests in any file whose name begins with test.
+
+Put the following in the tests.py file in the polls application:
+
+polls/tests.py
+import datetime
+
+from django.utils import timezone
+from django.test import TestCase
+
+from .models import Question
+
+
+class QuestionMethodTests(TestCase):
+
+    def test_was_published_recently_with_future_question(self):
+        """
+        was_published_recently() should return False for questions whose
+        pub_date is in the future.
+        """
+        time = timezone.now() + datetime.timedelta(days=30)
+        future_question = Question(pub_date=time)
+        self.assertEqual(future_question.was_published_recently(), False)
+What we have done here is created a django.test.TestCase subclass with a method that creates a Question instance with a pub_date in the future. We then check the output of was_published_recently() - which ought to be False.
+
+
+In the terminal, we can run our test:
+
+$ python manage.py test polls
+
+
+The Django test client
+
+Django provides a test Client to simulate a user interacting with the code at the view level. We can use it in tests.py or even in the shell.
+
+We will start again with the shell, where we need to do a couple of things that won’t be necessary in tests.py. The first is to set up the test environment in the shell:
+
+>>> from django.test.utils import setup_test_environment
+>>> setup_test_environment()
+
+setup_test_environment() installs a template renderer which will allow us to examine some additional attributes on responses such as response.context that otherwise wouldn’t be available. Note that this method does not setup a test database, so the following will be run against the existing database and the output may differ slightly depending on what questions you already created.
+
+Next we need to import the test client class (later in tests.py we will use the django.test.TestCase class, which comes with its own client, so this won’t be required):
+
+>>> from django.test import Client
+>>> # create an instance of the client for our use
+>>> client = Client()
+With that ready, we can ask the client to do some work for us:
+
+>>> # get a response from '/'
+>>> response = client.get('/')
+>>> # we should expect a 404 from that address
+>>> response.status_code
+404
+>>> # on the other hand we should expect to find something at '/polls/'
+>>> # we'll use 'reverse()' rather than a hardcoded URL
+>>> from django.core.urlresolvers import reverse
+>>> response = client.get(reverse('polls:index'))
+>>> response.status_code
+200
+>>> response.content
+b'\n\n\n    <p>No polls are available.</p>\n\n'
+>>> # note - you might get unexpected results if your ``TIME_ZONE``
+>>> # in ``settings.py`` is not correct. If you need to change it,
+>>> # you will also need to restart your shell session
+>>> from polls.models import Question
+>>> from django.utils import timezone
+>>> # create a Question and save it
+>>> q = Question(question_text="Who is your favorite Beatle?", pub_date=timezone.now())
+>>> q.save()
+>>> # check the response once again
+>>> response = client.get('/polls/')
+>>> response.content
+b'\n\n\n    <ul>\n    \n        <li><a href="/polls/1/">Who is your favorite Beatle?</a></li>\n    \n    </ul>\n\n'
+>>> # If the following doesn't work, you probably omitted the call to
+>>> # setup_test_environment() described above
+>>> response.context['latest_question_list']
+[<Question: Who is your favorite Beatle?>]
+
+
+The database is reset for each test method, so the first question is no longer there, and so again the index shouldn’t have any questions in it.
+
+
+class QuestionIndexDetailTests(TestCase):
+    def test_detail_view_with_a_future_question(self):
+        """
+        The detail view of a question with a pub_date in the future should
+        return a 404 not found.
+        """
+        future_question = create_question(question_text='Future question.',
+                                          days=5)
+        response = self.client.get(reverse('polls:detail',
+                                   args=(future_question.id,)))
+        self.assertEqual(response.status_code, 404)
+
+    def test_detail_view_with_a_past_question(self):
+        """
+        The detail view of a question with a pub_date in the past should
+        display the question's text.
+        """
+        past_question = create_question(question_text='Past Question.',
+                                        days=-5)
+        response = self.client.get(reverse('polls:detail',
+                                   args=(past_question.id,)))
+        self.assertContains(response, past_question.question_text,
+                            status_code=200)
+
+
+As long as your tests are sensibly arranged, they won’t become unmanageable. Good rules-of-thumb include having:
+
+a separate TestClass for each model or view
+a separate test method for each set of conditions you want to test
+test method names that describe their function
+
+
+For example, while our tests here have covered some of the internal logic of a model and the way our views publish information, you can use an “in-browser” framework such as Selenium to test the way your HTML actually renders in a browser. These tools allow you to check not just the behavior of your Django code, but also, for example, of your JavaScript. It’s quite something to see the tests launch a browser, and start interacting with your site, as if a human being were driving it! Django includes LiveServerTestCase to facilitate integration with tools like Selenium.
+
+If you have a complex application, you may want to run tests automatically with every commit for the purposes of continuous integration, so that quality control is itself - at least partially - automated.
+
+A good way to spot untested parts of your application is to check code coverage. This also helps identify fragile or even dead code. If you can’t test a piece of code, it usually means that code should be refactored or removed. Coverage will help to identify dead code. See Integration with coverage.py for details.
+
+
+The default startapp template creates a tests.py file in the new application. This might be fine if you only have a few tests, but as your test suite grows you’ll likely want to restructure it into a tests package so you can split your tests into different submodules such as test_models.py, test_views.py, test_forms.py, etc. Feel free to pick whatever organizational scheme you like.
+
+
+# Run all the tests in the animals.tests module
+$ ./manage.py test animals.tests
+
+# Run all the tests found within the 'animals' package
+$ ./manage.py test animals
+
+# Run just one test case
+$ ./manage.py test animals.tests.AnimalTestCase
+
+# Run just one test method
+$ ./manage.py test animals.tests.AnimalTestCase.test_animals_can_speak
+You can also provide a path to a directory to discover tests below that directory:
+
+$ ./manage.py test animals/
+
+You can specify a custom filename pattern match using the -p (or --pattern) option, if your test files are named differently from the test*.py pattern:
+
+$ ./manage.py test --pattern="tests_*.py"
+
+
+If you press Ctrl-C while the tests are running, the test runner will wait for the currently running test to complete and then exit gracefully. During a graceful exit the test runner will output details of any test failures, report on how many tests were run and how many errors and failures were encountered, and destroy any test databases as usual. Thus pressing Ctrl-C can be very useful if you forget to pass the --failfast option, notice that some tests are unexpectedly failing and want to get details on the failures without waiting for the full test run to complete.
+
+If you do not want to wait for the currently running test to finish, you can press Ctrl-C a second time and the test run will halt immediately, but not gracefully. No details of the tests run before the interruption will be reported, and any test databases created by the run will not be destroyed.
+
+
+It’s a good idea to run your tests with Python warnings enabled: python -Wall manage.py test. The -Wall flag tells Python to display deprecation warnings. Django, like many other Python libraries, uses these warnings to flag when features are going away. It also might flag areas in your code that aren’t strictly wrong but could benefit from a better implementation.
+
+
+Tests that require a database (namely, model tests) will not use your “real” (production) database. Separate, blank databases are created for the tests.
+
+Regardless of whether the tests pass or fail, the test databases are destroyed when all the tests have been executed.
+
+New in Django 1.8:
+You can prevent the test databases from being destroyed by using the test --keepdb flag. This preserves the test database between runs. If the database does not exist, it will first be created. Any migrations will also be applied in order to keep it up to date.
+
+
+Finding data from your production database when running tests?
+
+If your code attempts to access the database when its modules are compiled, this will occur before the test database is set up, with potentially unexpected results. For example, if you have a database query in module-level code and a real database exists, production data could pollute your tests. It is a bad idea to have such import-time database queries in your code anyway - rewrite your code so that it doesn’t do this.
+
+This also applies to customized implementations of ready().
+
+
+

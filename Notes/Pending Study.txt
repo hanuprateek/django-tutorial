@@ -14,3 +14,14 @@ https://docs.djangoproject.com/en/1.9/topics/db/queries/#filters-can-reference-f
 https://docs.djangoproject.com/en/1.9/ref/models/
 
 https://docs.djangoproject.com/en/1.9/topics/templates/#usage
+
+https://docs.djangoproject.com/en/1.9/ref/request-response/
+https://docs.djangoproject.com/en/1.9/ref/models/expressions/#avoiding-race-conditions-using-f
+
+https://docs.djangoproject.com/en/1.9/topics/class-based-views/intro/
+https://docs.djangoproject.com/en/1.9/topics/class-based-views/generic-editing/
+https://docs.djangoproject.com/en/1.9/topics/class-based-views/mixins/
+
+https://docs.djangoproject.com/en/1.9/topics/testing/overview/
+https://docs.djangoproject.com/en/1.9/topics/testing/tools/
+https://docs.djangoproject.com/en/1.9/topics/testing/advanced/
