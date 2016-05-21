@@ -33,3 +33,9 @@ http://www.fabfile.org/
 https://docs.djangoproject.com/en/1.9/ref/contrib/admin/#django.contrib.admin.ModelAdmin.list_display_links
 https://docs.djangoproject.com/en/1.9/topics/templates/
 
+https://docs.djangoproject.com/en/1.9/intro/reusable-apps/
+https://docs.djangoproject.com/en/1.9/howto/
+https://docs.djangoproject.com/en/1.9/ref/
+https://docs.djangoproject.com/en/1.9/topics/
+
+https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
